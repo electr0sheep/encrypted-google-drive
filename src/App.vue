@@ -1,60 +1,55 @@
 <template>
-  <v-app>
-    <v-app-bar
-      app
-      color="primary"
-      dark
-    >
-      <div class="d-flex align-center">
-        <v-img
-          alt="Vuetify Logo"
-          class="shrink mr-2"
-          contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-          transition="scale-transition"
-          width="40"
-        />
-
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
-      </div>
-
-      <v-spacer></v-spacer>
-
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-main>
-      <HelloWorld/>
-    </v-main>
-  </v-app>
+  <drive-view
+    v-if="loggedIn && logInCheckComplete"
+    :logged-in.sync="loggedIn"
+    :gapi.sync="gapi"
+  />
+  <log-in-view
+    v-else-if="!loggedIn && logInCheckComplete"
+    :logged-in.sync="loggedIn"
+    :gapi.sync="gapi"
+  />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
+import DriveView from './components/DriveView';
+import LogInView from './components/LogInView';
 
 export default {
   name: 'App',
 
   components: {
-    HelloWorld,
+    DriveView,
+    LogInView,
   },
 
   data: () => ({
-    //
+    gapi: {},
+    loggedIn: false,
+    logInCheckComplete: false,
   }),
+
+  mounted() {
+    this.$gapi.getGapiClient()
+        .then((gapi) => {
+          this.gapi = gapi;
+          this.checkIfAlreadyLoggedIn();
+        });
+  },
+
+  methods: {
+    checkIfAlreadyLoggedIn() {
+      if (this.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+        this.loggedIn = true;
+      }
+      this.logInCheckComplete = true;
+    },
+  },
 };
 </script>
+
+<style scoped>
+.custom-toolbar-title {
+  color: #5f6368 !important;
+}
+</style>
