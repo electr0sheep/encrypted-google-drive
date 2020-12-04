@@ -100,34 +100,12 @@
         fluid
         @contextmenu.prevent.stop="showRootContextMenu"
       />
-      <v-menu
-        v-model="showMenu"
-        :position-x="x"
-        :position-y="y"
-        absolute
-        offset-y
-      >
-        <v-list>
-          <template
-            v-for="(itemGroup, itemGroupIndex) in menuItems"
-          >
-            <v-divider
-              v-if="itemGroupIndex > 0"
-              :key="`divider-${itemGroupIndex}`"
-            />
-            <v-list-item
-              v-for="(item, itemIndex) in itemGroup"
-              :key="`${itemGroupIndex}-${itemIndex}`"
-              link
-            >
-              <v-list-item-icon>
-                <v-icon v-text="item.icon" />
-              </v-list-item-icon>
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item>
-          </template>
-        </v-list>
-      </v-menu>
+      <context-menu
+        :menu-items="menuItems"
+        :show-menu.sync="showMenu"
+        :x="x"
+        :y="y"
+      />
     </v-main>
   </v-app>
 </template>
@@ -135,6 +113,7 @@
 <script>
 import FilesList from './FilesList';
 import FoldersList from './FoldersList';
+import ContextMenu from './ContextMenu';
 
 export default {
   name: 'DriveView',
@@ -142,6 +121,7 @@ export default {
   components: {
     FilesList,
     FoldersList,
+    ContextMenu,
   },
 
   props: {
