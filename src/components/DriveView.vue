@@ -4,6 +4,7 @@
       app
       flat
       color="white"
+      @contextmenu.prevent.stop
     >
       <v-img
         alt="Google Drive Logo"
@@ -78,114 +79,65 @@
 
     <v-main>
       <v-container
+        v-if="loading === false"
         fluid
+        @contextmenu.prevent.stop="showRootContextMenu"
       >
-        <v-row>
-          <v-col>
-            Folders
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col
-            v-for="folder in folders"
-            :key="folder.id"
-            cols="6"
-            sm="4"
-            md="4"
-            lg="2"
-            xl="2"
-          >
-            <v-card
-              outlined
-              max-height="48"
-              min-height="48"
-            >
-              <v-card-text
-                class="mt-n1 text-truncate"
-                style="font-size: 13px;"
-              >
-                <v-icon
-                  v-if="folder.shared"
-                  color="#5f6367"
-                >
-                  mdi-folder-account
-                </v-icon>
-                <v-icon
-                  v-else
-                  color="#5f6367"
-                >
-                  mdi-folder
-                </v-icon>
-                {{ folder.name }}
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            Files
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col
-            v-for="file in files"
-            :key="file.id"
-            cols="6"
-            sm="4"
-            md="4"
-            lg="2"
-            xl="2"
-          >
-            <v-card
-              outlined
-              max-height="48"
-              min-height="48"
-            >
-              <v-card-text
-                class="mt-n1 text-truncate"
-                style="font-size: 13px;"
-              >
-                <!-- eslint-disable max-len -->
-                <v-icon
-                  v-if="file.mimeType == 'application/vnd.google-apps.document'"
-                  color="#4285f3"
-                >
-                  mdi-text-box
-                </v-icon>
-                <v-icon
-                  v-else-if="file.mimeType == 'application/pdf'"
-                  color="#ea4435"
-                >
-                  mdi-pdf-box
-                </v-icon>
-                <v-icon
-                  v-else-if="file.mimeType == 'image/png'"
-                  color="#da3025"
-                >
-                  mdi-image
-                </v-icon>
-                <v-icon
-                  v-else-if="file.mimeType == 'text/plain'"
-                  color="#1b73e7"
-                >
-                  mdi-file-document
-                </v-icon>
-                <v-icon v-else>
-                  mdi-folder
-                </v-icon>
-                {{ file.name }}
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+        <folders-list
+          v-if="folders.length > 0"
+          :folders="folders"
+          :get-folder-contents="getFolderContents"
+          :show-folder-context-menu="showFolderContextMenu"
+        />
+        <files-list
+          v-if="files.length > 0"
+          :files="files"
+          :show-file-context-menu="showFileContextMenu"
+        />
       </v-container>
+      <v-menu
+        v-model="showMenu"
+        :position-x="x"
+        :position-y="y"
+        absolute
+        offset-y
+      >
+        <v-list>
+          <template
+            v-for="(itemGroup, itemGroupIndex) in menuItems"
+          >
+            <v-divider
+              v-if="itemGroupIndex > 0"
+              :key="`divider-${itemGroupIndex}`"
+            />
+            <v-list-item
+              v-for="(item, itemIndex) in itemGroup"
+              :key="`${itemGroupIndex}-${itemIndex}`"
+              link
+            >
+              <v-list-item-icon>
+                <v-icon v-text="item.icon" />
+              </v-list-item-icon>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item>
+          </template>
+        </v-list>
+      </v-menu>
     </v-main>
   </v-app>
 </template>
 
 <script>
+import FilesList from './FilesList';
+import FoldersList from './FoldersList';
+
 export default {
   name: 'DriveView',
+
+  components: {
+    FilesList,
+    FoldersList,
+  },
 
   props: {
     gapi: {
@@ -198,6 +150,11 @@ export default {
     searchInput: '',
     folders: [],
     files: [],
+    loading: true,
+    showMenu: false,
+    x: 0,
+    y: 0,
+    menuItems: [[]],
   }),
 
   mounted() {
@@ -205,6 +162,106 @@ export default {
   },
 
   methods: {
+    folderDoubleClick(folderId) {
+      this.getFolderContents(folderId);
+    },
+
+    showRootContextMenu(e) {
+      this.menuItems = [
+        [
+          {
+            title: 'New Folder',
+            icon: 'mdi-folder-plus-outline',
+          },
+        ],
+        [
+          {
+            title: 'Upload files',
+            icon: 'mdi-file-upload-outline',
+          },
+          {
+            title: 'Upload folder',
+            icon: 'mdi-folder-upload-outline',
+          },
+        ],
+      ];
+      this.showMenu = false;
+      this.x = e.clientX;
+      this.y = e.clientY;
+      this.$nextTick(() => {
+        this.showMenu = true;
+      });
+    },
+
+    showFilesContextMenu(e) {
+      this.menuItems = [
+        [
+          {
+            title: 'Download',
+            icon: 'mdi-download-outline',
+          },
+        ],
+        [
+          {
+            title: 'Remove',
+            icon: 'mdi-trash-can-outline',
+          },
+        ],
+      ];
+      this.showMenu = false;
+      this.x = e.clientX;
+      this.y = e.clientY;
+      this.$nextTick(() => {
+        this.showMenu = true;
+      });
+    },
+
+    showFolderContextMenu(e) {
+      this.menuItems = [
+        [
+          {
+            title: 'Download',
+            icon: 'mdi-download-outline',
+          },
+        ],
+        [
+          {
+            title: 'Remove',
+            icon: 'mdi-trash-can-outline',
+          },
+        ],
+      ];
+      this.showMenu = false;
+      this.x = e.clientX;
+      this.y = e.clientY;
+      this.$nextTick(() => {
+        this.showMenu = true;
+      });
+    },
+
+    showFileContextMenu(e) {
+      this.menuItems = [
+        [
+          {
+            title: 'Download',
+            icon: 'mdi-download-outline',
+          },
+        ],
+        [
+          {
+            title: 'Remove',
+            icon: 'mdi-trash-can-outline',
+          },
+        ],
+      ];
+      this.showMenu = false;
+      this.x = e.clientX;
+      this.y = e.clientY;
+      this.$nextTick(() => {
+        this.showMenu = true;
+      });
+    },
+
     signOut() {
       this.gapi.auth2.getAuthInstance().signOut();
       this.$emit('update:loggedIn', false);
@@ -232,6 +289,7 @@ export default {
             this.getFolders(response.result.files.filter((file) => {
               return file.mimeType === 'application/vnd.google-apps.folder';
             }));
+            this.loading = false;
           });
     },
 
