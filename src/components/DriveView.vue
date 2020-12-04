@@ -95,6 +95,11 @@
           :show-file-context-menu="showFileContextMenu"
         />
       </v-container>
+      <v-container
+        fill-height
+        fluid
+        @contextmenu.prevent.stop="showRootContextMenu"
+      />
       <v-menu
         v-model="showMenu"
         :position-x="x"
