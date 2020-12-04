@@ -16,6 +16,7 @@
         xl="2"
       >
         <v-card
+          :id="file.id"
           outlined
           hover
           max-height="48"

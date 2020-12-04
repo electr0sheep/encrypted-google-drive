@@ -105,6 +105,7 @@
         :show-menu.sync="showMenu"
         :x="x"
         :y="y"
+        @selected-item="setcontextMenuSelection"
       />
     </v-main>
   </v-app>
@@ -140,56 +141,57 @@ export default {
     x: 0,
     y: 0,
     menuItems: [[]],
+    contextMenuSelection: null,
+    selectedItem: null,
   }),
+
+  watch: {
+    contextMenuSelection: function() {
+      switch (this.contextMenuSelection) {
+        case 'new-folder':
+          alert('Create a new folder');
+          break;
+        default:
+          // eslint-disable-next-line max-len
+          alert(`You selected ${this.contextMenuSelection}, but we're not doing anything with that yet!`);
+          break;
+      }
+    },
+  },
 
   mounted() {
     this.getFolderContents('root');
   },
 
   methods: {
+    setcontextMenuSelection(value) {
+      this.contextMenuSelection = value;
+    },
+
     folderDoubleClick(folderId) {
       this.getFolderContents(folderId);
     },
 
     showRootContextMenu(e) {
+      this.selectedItem = null;
       this.menuItems = [
         [
           {
             title: 'New Folder',
             icon: 'mdi-folder-plus-outline',
+            value: 'new-folder',
           },
         ],
         [
           {
             title: 'Upload files',
             icon: 'mdi-file-upload-outline',
+            value: 'upload-files',
           },
           {
             title: 'Upload folder',
             icon: 'mdi-folder-upload-outline',
-          },
-        ],
-      ];
-      this.showMenu = false;
-      this.x = e.clientX;
-      this.y = e.clientY;
-      this.$nextTick(() => {
-        this.showMenu = true;
-      });
-    },
-
-    showFilesContextMenu(e) {
-      this.menuItems = [
-        [
-          {
-            title: 'Download',
-            icon: 'mdi-download-outline',
-          },
-        ],
-        [
-          {
-            title: 'Remove',
-            icon: 'mdi-trash-can-outline',
+            value: 'upload-folder',
           },
         ],
       ];
@@ -202,17 +204,20 @@ export default {
     },
 
     showFolderContextMenu(e) {
+      this.selectedItem = e.target.offsetParent.id;
       this.menuItems = [
         [
           {
             title: 'Download',
             icon: 'mdi-download-outline',
+            value: 'download-folder',
           },
         ],
         [
           {
             title: 'Remove',
             icon: 'mdi-trash-can-outline',
+            value: 'remove-folder',
           },
         ],
       ];
@@ -225,17 +230,20 @@ export default {
     },
 
     showFileContextMenu(e) {
+      this.selectedItem = e.target.offsetParent.id;
       this.menuItems = [
         [
           {
             title: 'Download',
             icon: 'mdi-download-outline',
+            value: 'download-file',
           },
         ],
         [
           {
             title: 'Remove',
             icon: 'mdi-trash-can-outline',
+            value: 'remove-file',
           },
         ],
       ];

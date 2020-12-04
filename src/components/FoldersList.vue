@@ -16,6 +16,7 @@
         xl="2"
       >
         <v-card
+          :id="folder.id"
           outlined
           hover
           max-height="48"
